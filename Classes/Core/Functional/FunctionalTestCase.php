@@ -299,6 +299,7 @@ abstract class FunctionalTestCase extends BaseTestCase implements ContainerInter
             $testbase->linkFrameworkExtensionsToInstance($this->instancePath, $frameworkExtension);
             $testbase->linkPathsInTestInstance($this->instancePath, $this->pathsToLinkInTestInstance);
             $testbase->providePathsInTestInstance($this->instancePath, $this->pathsToProvideInTestInstance);
+            $localConfiguration = [];
             $localConfiguration['DB'] = $testbase->getOriginalDatabaseSettingsFromEnvironmentOrLocalConfiguration();
 
             $originalDatabaseName = '';
@@ -321,15 +322,23 @@ abstract class FunctionalTestCase extends BaseTestCase implements ContainerInter
                 $localConfiguration['DB']['Connections']['Default']['dbname'] = $dbName;
                 $testbase->testDatabaseNameIsNotTooLong($originalDatabaseName, $localConfiguration);
                 if ($dbDriver === 'mysqli' || $dbDriver === 'pdo_mysql') {
-                    $localConfiguration['DB']['Connections']['Default']['charset'] = 'utf8mb4';
-                    $localConfiguration['DB']['Connections']['Default']['tableoptions']['charset'] = 'utf8mb4';
-                    $localConfiguration['DB']['Connections']['Default']['tableoptions']['collate'] = 'utf8mb4_unicode_ci';
+                    if (($localConfiguration['DB']['charset'] ?? '') === '') {
+                        $localConfiguration['DB']['Connections']['Default']['charset'] = 'utf8mb4';
+                    }
+                    $localConfiguration['DB']['Connections']['Default']['defaultTableOptions']['charset'] = $localConfiguration['DB']['Connections']['Default']['charset'];
+                    $localConfiguration['DB']['Connections']['Default']['defaultTableOptions']['collation'] = $localConfiguration['DB']['Connections']['Default']['charset'] . '_unicode_ci';
                     $localConfiguration['DB']['Connections']['Default']['initCommands'] = 'SET SESSION sql_mode = \'STRICT_ALL_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_VALUE_ON_ZERO,NO_ENGINE_SUBSTITUTION,NO_ZERO_DATE,NO_ZERO_IN_DATE,ONLY_FULL_GROUP_BY\';';
+                }
+                if (($localConfiguration['DB']['charset'] ?? '') === '') {
+                    $localConfiguration['DB']['charset'] = 'utf-8';
                 }
             } else {
                 // sqlite dbs of all tests are stored in a dir parallel to instance roots. Allows defining this path as tmpfs.
                 $testbase->createDirectory(dirname($this->instancePath) . '/functional-sqlite-dbs');
                 $localConfiguration['DB']['Connections']['Default']['path'] = $dbPathSqlite;
+                if (($localConfiguration['DB']['charset'] ?? '') === '') {
+                    $localConfiguration['DB']['charset'] = 'utf-8';
+                }
             }
 
             // Set some hard coded base settings for the instance. Those could be overruled by
