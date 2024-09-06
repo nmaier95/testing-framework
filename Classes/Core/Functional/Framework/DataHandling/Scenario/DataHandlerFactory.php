@@ -107,11 +107,13 @@ class DataHandlerFactory
      * @param array $settings
      * @param string|null $nodeId
      * @param string|null $parentId
+     * @param EntityConfiguration|null $parentEntityConfiguration
      */
     private function processEntities(
         array $settings,
         ?string $nodeId = null,
-        ?string $parentId = null
+        ?string $parentId = null,
+        ?EntityConfiguration $parentEntityConfiguration = null,
     ): void {
         foreach ($settings as $entityName => $entitySettings) {
             $entityConfiguration = $this->provideEntityConfiguration($entityName);
@@ -120,7 +122,8 @@ class DataHandlerFactory
                     $entityConfiguration,
                     $itemSettings,
                     $nodeId,
-                    $parentId
+                    $parentId,
+                    $parentEntityConfiguration
                 );
             }
         }
@@ -131,12 +134,14 @@ class DataHandlerFactory
      * @param array $itemSettings
      * @param string|null $nodeId
      * @param string|null $parentId
+     * @param EntityConfiguration|null $parentEntityConfiguration
      */
     private function processEntityItem(
         EntityConfiguration $entityConfiguration,
         array $itemSettings,
         ?string $nodeId = null,
-        ?string $parentId = null
+        ?string $parentId = null,
+        ?EntityConfiguration $parentEntityConfiguration = null,
     ): void {
         $values = $this->processEntityValues(
             $entityConfiguration,
@@ -184,8 +189,23 @@ class DataHandlerFactory
             $this->processEntities(
                 $itemSettings['entities'],
                 $newId,
-                $parentId
+                $parentId,
+                $entityConfiguration
             );
+        }
+
+        if (
+            $parentEntityConfiguration instanceof EntityConfiguration &&
+            $entityConfiguration->getParentRelationColumnName() !== null &&
+            $entityConfiguration->getParentRelationColumnName() !== '') {
+            $existingValues = array_filter(
+                explode(
+                    ',',
+                    (string)($this->dataMapPerWorkspace[$workspaceId][$parentEntityConfiguration->getTableName()][$nodeId][$entityConfiguration->getParentRelationColumnName()] ?? '')
+                )
+            );
+            $existingValues[] = $newId;
+            $this->dataMapPerWorkspace[$workspaceId][$parentEntityConfiguration->getTableName()][$nodeId][$entityConfiguration->getParentRelationColumnName()] = implode(',', $existingValues);
         }
     }
 

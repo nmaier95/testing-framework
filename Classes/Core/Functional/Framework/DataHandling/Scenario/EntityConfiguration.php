@@ -42,6 +42,8 @@ class EntityConfiguration
      */
     private $parentColumnName;
 
+    private $parentRelationColumnName;
+
     /**
      * @var string|null
      */
@@ -86,6 +88,10 @@ class EntityConfiguration
 
         if (!empty($settings['parentColumnName'])) {
             $target->parentColumnName = $settings['parentColumnName'];
+        }
+
+        if (!empty($settings['parentRelationColumnName'])) {
+            $target->parentRelationColumnName = $settings['parentRelationColumnName'];
         }
 
         if (!empty($settings['nodeColumnName'])) {
@@ -147,6 +153,14 @@ class EntityConfiguration
     public function getParentColumnName(): ?string
     {
         return $this->parentColumnName;
+    }
+
+    /**
+     * @return string
+     */
+    public function getParentRelationColumnName(): ?string
+    {
+        return $this->parentRelationColumnName;
     }
 
     /**
